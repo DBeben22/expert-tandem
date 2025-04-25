@@ -11,7 +11,7 @@ code from:
 https://github.com/PASTAQ-MS/PASTAQ
 """
 # plot mass spectra considering that only non-eros values are included in the spectra
-def plot_msSpectra(mz, intensity, norm_mz_diff = 0.0035, diffFactor = 1.3, scanIdx = 0):
+def plot_msSpectra(mz, intensity, norm_mz_diff = 0.0035, diffFactor = 1.3, scanIdx = 0, mzRange = (0, 1200)):
     """
     Plotting mass spectra, expecting spectra where 0 intensity values were omitted.
 
@@ -59,6 +59,7 @@ def plot_msSpectra(mz, intensity, norm_mz_diff = 0.0035, diffFactor = 1.3, scanI
     plt.plot(newSpectra['mz'], newSpectra['intensity'], color = 'red', marker='', linestyle='-')  # Plot mz vs. intensity
     plt.xlabel('m/z')  # Set the x-axis label
     plt.ylabel('Intensity')  # Set the y-axis label
+    plt.xlim(mzRange)
     plt.title('Mass Spectrum of scan {}' .format(scanIdx))  # Set the title
     plt.grid(False)  # Show grid
     return fig

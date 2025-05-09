@@ -322,6 +322,9 @@ def generate_massspectra_plot_automatic_labels(input_df,input_annotations, outpu
     '''
     caption_values = pd.read_csv(input_file + ".txt", sep=";", names=["m/z", "caption"], dtype={"m/z": np.float64})
     '''
+    if input_annotations is None:
+        input_annotations = pd.DataFrame(columns=["m/z", "caption"])
+
     if "caption" not in input_annotations.columns:
         input_annotations["caption"] = ""
 
@@ -475,7 +478,8 @@ def generate_massspectra_plot_automatic_labels(input_df,input_annotations, outpu
     # set grid
     plt.grid(True, axis="y", color='black', linestyle=':', linewidth=0.1)
 
-    plt.savefig(output_filename + "." + filetype, dpi=fig.dpi, format=filetype)
+    # plt.savefig(output_filename + "." + filetype, dpi=fig.dpi, format=filetype)
+    plt.show()
     plt.close()
 
 

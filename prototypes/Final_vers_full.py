@@ -135,6 +135,7 @@ def find_closest_aa(value, thres = aa_thres):
         return closeness_list[0][0]
     return None
 
+# taking [sci_peak] out to avoid missing important peaks
 mz_peaks = mz_array[sci_peak]
 intensity_peaks = intensity_array[sci_peak]
 # the precursor mass is not in the original mz_array or intensity_array dataset
@@ -220,8 +221,8 @@ def build_dm():
     df_aa.rename(columns=rename, inplace=True)
     df_aa.rename(index=rename, inplace=True)
 
-    df_aa.to_csv(f"distance_matrix_{peptide}.csv")
-    df_aa = pd.read_csv(f"distance_matrix_{peptide}.csv").set_index("Unnamed: 0")
+    df_aa.to_csv(f"../distance_matrices/distance_matrix_{peptide}.csv")
+    df_aa = pd.read_csv(f"../distance_matrices/distance_matrix_{peptide}.csv").set_index("Unnamed: 0")
     # suboptimal process but sadly I dont have the time to optimize this as I'd like.
     # I had this because I used the to_csv and read_csv functions when testing
     # and now I realized the csv thats being read is different to the one being written.
@@ -282,9 +283,13 @@ def dfs(cur_peak, aa_path, peak_path, all_paths, mz_round, df_aa):
         # Dead end: store complete path
         all_paths.append((aa_path, peak_path))
 
+
+print("calculating paths")
+
 all_paths = []
 start_peak = float(mz_round[-1])  # typically highest m/z
 dfs(start_peak, [], [start_peak], all_paths, mz_round, df_aa)
+print("finished paths")
 
 pep_df = pd.DataFrame(all_paths, columns = ["sequence","peaks"])
 pep_df['len_pep'] = pep_df["peaks"].str.len()
@@ -329,8 +334,9 @@ pep_df["rank_p"] = pep_df.apply(
 lambda row: empirical_p_value(row["rank_sum"], rank_distributions[row["len_pep"]]),
 axis=1
 )
-#%% md
-## 2nd m/z fidelity
+
+print("intensity rank calculated")
+
 #%%
 def find_SSE(sequence, peaks):
     # find the m/z fidelity from the first peak to the last
@@ -375,14 +381,14 @@ def create_SSE_dist(n):
 
 SSE_len = 100000
 SSE_distributions = create_SSE_dist(SSE_len)
-def find_mz_fid_p(row):
-    count = sum(1 for s in SSE_distributions[row["len_pep"]] if s <= row["SSE"])
+def find_mz_fid_p(len, SSE_val):
+    count = sum(1 for s in SSE_distributions[len] if s <= SSE_val)
     return (count / SSE_len) + 0.000001 # to avoid math errors when value is really low
-
+#%%
 # apply mz fidelity to dataframe
 
 pep_df["mz_fid_p"] = pep_df.apply(
-lambda row: find_mz_fid_p(row),
+lambda row: find_mz_fid_p(row["len_pep"],row["SSE"]),
 axis=1
 )
 
@@ -400,6 +406,9 @@ pep_df["combined_p"] = pep_df.apply(
 lambda row: fisher_combined_p(row["rank_p"],row["mz_fid_p"]),
 axis=1
 )
+
+pep_df.sort_values(by=["combined_p"], ascending=True).reset_index().to_csv(f"../fits/{peptide}_fits")
+print("pep_df saved")
 
 # I assume the best fit peptide is in the top 20
 
@@ -458,5 +467,5 @@ def equality_check(a, b):
 equality_score = equality_check(Best_fit_peptide["sequence"], "".join(real_peptide[0]))
 
 print("equality score", equality_score)
-print("real peptide",real_peptide)
-print("Top 20:\n", top_20)
+# print("real peptide",real_peptide)
+# print("Top 20:\n", top_20)
